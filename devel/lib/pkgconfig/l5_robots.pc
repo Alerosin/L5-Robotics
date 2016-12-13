@@ -1,0 +1,8 @@
+prefix=/home/alex/catkin_ws/devel
+
+Name: l5_robots
+Description: Description of l5_robots
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/alex/catkin_ws/devel/lib 
+Requires: 
