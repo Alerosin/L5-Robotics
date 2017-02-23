@@ -3,6 +3,7 @@
 
 # This script constructs and returns an object that represents a
 # 2D cellular automata using the rules from Conway's game of life.
+# Constructs a new grid for every update.
 
 import numpy as np
 import time
@@ -15,11 +16,11 @@ import sys
 import rospy
 from l5_robots.msg import CaGrid, CaRow, Obstacles
 
-HEIGHT = 20
-WIDTH = 20
+HEIGHT = 40
+WIDTH = 40
 LIVE = 1
 DEAD = 0
-BETWEEN = 2
+OBSTACLE = 2
 
 PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5), 
             (2, 1), (2, 6), (3, 0), (3, 7), 
@@ -32,7 +33,9 @@ PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5),
 # where it can be used to take actions.
 class CA():
     def __init__(self):
+        self.octagonSet = False
         self.lat = np.zeros((HEIGHT, WIDTH), int)
+
 
         rospy.init_node('CA', anonymous=False)
         rospy.loginfo("CA node started.")
@@ -60,23 +63,59 @@ class CA():
 
         while not rospy.is_shutdown():
             r.sleep()
-        
+    
+
+    # Given a cell, check it's Moore neighbours, return a sum of live ones
+    def checkNeighbours(self, i, j):
+        check_range = [-1, 0, 1]
+        res = 0
+
+        for y_offset in check_range:
+            y = i + y_offset 
+            if y < 0 or y >= HEIGHT:
+                continue
+
+            for x_offset in check_range:
+                if y_offset == 0 and x_offset ==0:
+                    continue
+
+                x = j + x_offset
+                if x < 0 or x >= WIDTH:
+                    continue
+
+                
+                if self.lat[y][x] == LIVE:
+                    res = res + 1
+
+
+        #if res != 0:
+            #print("Detected: " + str(res) + "  i: " + str(i) + "  j: " + str(j))
+
+        return res
+
 
     def update(self):
+        if not self.octagonSet:
+            self.setOctagon()
+            self.octagonSet = True
+
         newLattice = np.zeros((HEIGHT, WIDTH), int)
 
         # Count the state of the neighbours, then update according to Brian's Brain rules
         for i in range(HEIGHT):
             for j in range(WIDTH):
-                neighbour_sum = (self.lat[i, (j-1)%WIDTH] + self.lat[i, (j+1)%WIDTH] + self.lat[(i-1)%HEIGHT, j] + 
-                            self.lat[(i+1)%HEIGHT, j] + self.lat[(i-1)%HEIGHT, (j-1)%WIDTH] +
-                            self.lat[(i-1)%HEIGHT, (j+1)%WIDTH] + self.lat[(i+1)%HEIGHT, (j-1)%WIDTH] +
-                            self.lat[(i+1)%HEIGHT, (j+1)%WIDTH])
+                if self.lat[i][j] == OBSTACLE:
+                    print("ENCOUNTERED OBSTACLE!!!")
+                    continue
+
+                neighbour_sum = self.checkNeighbours(i, j)
 
                 # GAME OF LIFE RULES
                 if self.lat[i][j] == LIVE:
                     if (neighbour_sum < 2) or (neighbour_sum > 3):
                         newLattice[i][j] = DEAD
+                    else:
+                        newLattice[i][j] = LIVE # Because the newLattice is init'ed with 0's - this case is required
                 elif self.lat[i][j] == DEAD:
                     if neighbour_sum == 3:
                         newLattice[i][j] = LIVE
@@ -89,8 +128,10 @@ class CA():
                 #if (self.lat[i][j] == BETWEEN): # Betweens again eligible for life
                 #    newLattice[i][j] = DEAD
 
-        self.lat[2][WIDTH-2] = LIVE
+
+        
         self.lat = newLattice
+        print(self.lat)
 
 
     def setStates(self):
@@ -107,7 +148,7 @@ class CA():
 
 
     def validate(self):
-        accepted = [LIVE, DEAD, BETWEEN]
+        accepted = [LIVE, DEAD, OBSTACLE]
         for y in lat:
             for x in y:
                 if not x in accepted:
@@ -124,6 +165,36 @@ class CA():
                 else:
                     self.lat[rel_y + y][rel_x + x] = DEAD
 
+    def setOBctagon(self):
+        rel_x = (WIDTH/2) - 4
+        rel_y = (HEIGHT/2) - 4
+
+        self.lat[rel_y + 0,rel_x + 3] = LIVE
+        self.lat[rel_y + 0,rel_x + 4] = LIVE
+        self.lat[rel_y + 1,rel_x + 2] = LIVE
+        self.lat[rel_y + 1,rel_x + 5] = LIVE
+        self.lat[rel_y + 2,rel_x + 1] = LIVE
+        self.lat[rel_y + 2,rel_x + 6] = LIVE
+        self.lat[rel_y + 3,rel_x + 0] = LIVE
+        self.lat[rel_y + 3,rel_x + 7] = LIVE
+        self.lat[rel_y + 4,rel_x + 0] = LIVE
+        self.lat[rel_y + 4,rel_x + 7] = LIVE
+        self.lat[rel_y + 5,rel_x + 1] = LIVE
+        self.lat[rel_y + 5,rel_x + 6] = LIVE
+        self.lat[rel_y + 6,rel_x + 2] = LIVE
+        self.lat[rel_y + 6,rel_x + 5] = LIVE
+        self.lat[rel_y + 7,rel_x + 3] = LIVE
+        self.lat[rel_y + 7,rel_x + 4] = LIVE
+
+
+    def setSpinner(self):
+        x = WIDTH/2
+        y = HEIGHT/2
+
+        self.lat[y][x] = LIVE
+        self.lat[y-1][x] = LIVE
+        self.lat[y+1][x] = LIVE
+
 
     # Calculates the locations of the obstacles and picks the correct CA cell.
     # The CA is considered a local map with the robot in the center.
@@ -136,17 +207,18 @@ class CA():
             x = d * math.cos(a)
             y = d * math.sin(a)
 
-            # How many cells away from the center
+            # How many cells away from the robot
             x_cell = int(math.floor(x / cell_width))
             y_cell = int(math.floor(y / cell_height))
 
-            # How many cells away from the origin
+            # Which cell, from the centre
             x_cell = ((WIDTH) / 2) + x_cell
             y_cell = ((HEIGHT) / 2) - y_cell
 
             # Fill in that cell
-            self.lat[y_cell, x_cell] = LIVE
-            #rospy.loginfo("CA node FILLED IN GRID: " + str(x_cell) + " " + str(y_cell))
+            self.lat[y_cell, x_cell] = OBSTACLE
+            print("Filled in: " + str(y_cell) + " " + str(x_cell))
+
         self.update()
         self.publishState()
 
@@ -164,8 +236,6 @@ class CA():
         grid_msg.grid = grid
 
         self.state_pub.publish(grid_msg)
-
-
 
 
     # STUB

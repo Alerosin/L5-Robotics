@@ -36,7 +36,6 @@ class Laser2CA():
             obs.angles = angles
             obs.max_range = LASER_RANGE_MAX
             self.obstacles_pub.publish(obs)
-            print(data.header.stamp)
 
 
     def __init__(self):
