@@ -3,6 +3,6 @@ prefix=/home/alex/catkin_ws/install
 Name: l5_robots
 Description: Description of l5_robots
 Version: 0.0.0
-Cflags: 
+Cflags: -I/home/alex/catkin_ws/install/include
 Libs: -L/home/alex/catkin_ws/install/lib 
-Requires: 
+Requires: rospy std_msgs message_runtime

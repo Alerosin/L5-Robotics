@@ -7,8 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/alex/catkin_ws/devel:$CMAKE_PREFIX_PATH"
-export LD_LIBRARY_PATH="/opt/ros/kinetic/lib:/home/alex/Code/VulkanSDK/1.0.30.0/x86_64/lib"
 export PWD="/home/alex/catkin_ws/build"
-export ROSLISP_PACKAGE_DIRECTORIES="/home/alex/catkin_ws/devel/share/common-lisp"
-export ROS_PACKAGE_PATH="/home/alex/catkin_ws/src:$ROS_PACKAGE_PATH"
