@@ -22,7 +22,7 @@ LIVE = 1
 DEAD = 0
 OBSTACLE = 2
 
-PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5), 
+OCTAGON_PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5), 
             (2, 1), (2, 6), (3, 0), (3, 7), 
             (4, 0), (4, 7), (5, 1), (5, 6), 
             (6, 2), (6, 5), (7, 3), (7, 4) ]
@@ -66,6 +66,7 @@ class CA():
     
 
     # Given a cell, check it's Moore neighbours, return a sum of live ones
+    # Functions by adding all live cells found within a size 9 kernel, except the centre
     def checkNeighbours(self, i, j):
         check_range = [-1, 0, 1]
         res = 0
@@ -82,19 +83,15 @@ class CA():
                 x = j + x_offset
                 if x < 0 or x >= WIDTH:
                     continue
-
                 
                 if self.lat[y][x] == LIVE:
                     res = res + 1
 
-
-        #if res != 0:
-            #print("Detected: " + str(res) + "  i: " + str(i) + "  j: " + str(j))
-
         return res
 
-
+    # TODO: More pythonic way of implementing?
     def update(self):
+        # If oscillator is not set, set it
         if not self.octagonSet:
             self.setOctagon()
             self.octagonSet = True
@@ -105,7 +102,7 @@ class CA():
         for i in range(HEIGHT):
             for j in range(WIDTH):
                 if self.lat[i][j] == OBSTACLE:
-                    print("ENCOUNTERED OBSTACLE!!!")
+                    newLattice[i][j] = OBSTACLE
                     continue
 
                 neighbour_sum = self.checkNeighbours(i, j)
@@ -128,10 +125,9 @@ class CA():
                 #if (self.lat[i][j] == BETWEEN): # Betweens again eligible for life
                 #    newLattice[i][j] = DEAD
 
-
-        
         self.lat = newLattice
-        print(self.lat)
+        if 2 in newLattice:
+            print("Found one")
 
 
     def setStates(self):
@@ -154,39 +150,18 @@ class CA():
                 if not x in accepted:
                     print("ERROR: Value error - Domains not respected")
 
-
+    # Sets the octagon oscillator in the centre of the CA
     def setOctagon(self):
         rel_x = (WIDTH/2) - 4
         rel_y = (HEIGHT/2) - 4
         for y in range(8):
             for x in range(8):
-                if (x, y) in PATTERN:
+                if (x, y) in OCTAGON_PATTERN:
                     self.lat[rel_y + y][rel_x + x] = LIVE
                 else:
                     self.lat[rel_y + y][rel_x + x] = DEAD
 
-    def setOBctagon(self):
-        rel_x = (WIDTH/2) - 4
-        rel_y = (HEIGHT/2) - 4
-
-        self.lat[rel_y + 0,rel_x + 3] = LIVE
-        self.lat[rel_y + 0,rel_x + 4] = LIVE
-        self.lat[rel_y + 1,rel_x + 2] = LIVE
-        self.lat[rel_y + 1,rel_x + 5] = LIVE
-        self.lat[rel_y + 2,rel_x + 1] = LIVE
-        self.lat[rel_y + 2,rel_x + 6] = LIVE
-        self.lat[rel_y + 3,rel_x + 0] = LIVE
-        self.lat[rel_y + 3,rel_x + 7] = LIVE
-        self.lat[rel_y + 4,rel_x + 0] = LIVE
-        self.lat[rel_y + 4,rel_x + 7] = LIVE
-        self.lat[rel_y + 5,rel_x + 1] = LIVE
-        self.lat[rel_y + 5,rel_x + 6] = LIVE
-        self.lat[rel_y + 6,rel_x + 2] = LIVE
-        self.lat[rel_y + 6,rel_x + 5] = LIVE
-        self.lat[rel_y + 7,rel_x + 3] = LIVE
-        self.lat[rel_y + 7,rel_x + 4] = LIVE
-
-
+    # Sets the spinner oscillator in the centre of the CA
     def setSpinner(self):
         x = WIDTH/2
         y = HEIGHT/2
@@ -198,10 +173,14 @@ class CA():
 
     # Calculates the locations of the obstacles and picks the correct CA cell.
     # The CA is considered a local map with the robot in the center.
+    # This is the main loop function, it calls update() and publish()
     def obstaclesCallback(self, data):
         obstacles = []
         cell_height = data.max_range / ((HEIGHT ) / 2)
         cell_width = data.max_range / ((WIDTH) / 2)
+
+        # Reset obstacle cells in the CA to 0 (for refreshing locations)
+        self.lat[self.lat == OBSTACLE] = DEAD
 
         for d, a in zip(data.distances, data.angles):
             x = d * math.cos(a)
@@ -217,7 +196,7 @@ class CA():
 
             # Fill in that cell
             self.lat[y_cell, x_cell] = OBSTACLE
-            print("Filled in: " + str(y_cell) + " " + str(x_cell))
+            #print("Filled in: " + str(y_cell) + " " + str(x_cell))
 
         self.update()
         self.publishState()

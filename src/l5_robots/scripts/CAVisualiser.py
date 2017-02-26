@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import cv2
-from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
+from std_msgs.msg import Header
 import sys
 
 # Colour mappings in BGR
@@ -24,12 +25,17 @@ class CAVisualiser():
         rospy.loginfo("CAVisualiser node started.")
         rospy.on_shutdown(self.shutdown)
 
+        # Variables controlling custom visualiser window (OpenCV)
         self.window = "CA Visualiser"
         self.image_scale = 15
 
+        # Construct nunpy arrays used to convert 2D grayscale to 3D BGR
         self.b_map = np.array([COLOURS[mapping][0] for mapping in COLOURS])
         self.g_map = np.array([COLOURS[mapping][1] for mapping in COLOURS])
         self.r_map = np.array([COLOURS[mapping][2] for mapping in COLOURS])
+
+        # Included in Header of Image msg
+        self.image_id = 0
                
         try:
             rospy.Subscriber("ca/state", CaGrid, self.stateCallback)
@@ -65,14 +71,20 @@ class CAVisualiser():
         for row in data.grid:
             self.grid.append([x for x in row.row])
 
-        self.grid = np.asarray(self.grid, dtype='uint16')
+        self.grid = np.asarray(self.grid, dtype=np.uint8)
 
         # Colour Representation
-        bgr_img = np.zeros([self.grid.shape[0], self.grid.shape[1], 3])
+        bgr_img = np.zeros([self.grid.shape[0], self.grid.shape[1], 3], np.uint8)
+        if 2 in self.grid:
+            print("FOUND OBSTACLE! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-        bgr_img[:,:,0] = self.b_map[self.grid]
-        bgr_img[:,:,1] = self.g_map[self.grid]
-        bgr_img[:,:,2] = self.r_map[self.grid]
+        # Construct BGR colour channels
+        # Must be divided by 255 because of scaling, and
+        # converted to to float since they need to be int to index first
+        bgr_img[:,:,0] = np.asarray(self.b_map[self.grid], dtype=np.uint8)
+        bgr_img[:,:,1] = np.asarray(self.g_map[self.grid], dtype=np.uint8)
+        bgr_img[:,:,2] = np.asarray(self.r_map[self.grid], dtype=np.uint8)
+        
         
         #for row in range(self.grid.shape[0]):
             #for cell in range(self.grid.shape[1]):
@@ -85,9 +97,14 @@ class CAVisualiser():
         res = cv2.resize(bgr_img, None, fx=self.image_scale, fy=self.image_scale, 
                             interpolation = cv2.INTER_AREA)
 
-        #self.drawScanLines()
+        # Publish to custom visualiser window
         cv2.imshow(self.window, res)
         cv2.waitKey(10)
+
+        # Publish to RVIZ
+
+    def makeImageMsg(self):
+
 
 
 
