@@ -50,6 +50,7 @@
   <run_depend>rviz</run_depend>
   <run_depend>urdf</run_depend>
   <run_depend>xacro</run_depend>
+  <run_depend>turtlebot</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
