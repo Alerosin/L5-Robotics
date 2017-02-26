@@ -31,7 +31,7 @@ class CAInterpreter():
 
     def stateCallback(self, data):
         # TODO: Analyse CA, publish some integer representing an action to ca/action
-        print("TODO: Interpreter")
+        pass
 
     def shutdown(self):
         rospy.loginfo("CAInterpreter node shutting down.")

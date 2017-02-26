@@ -35,6 +35,14 @@
     <remap from="scan" to="/scan"/>
   </node>
 
+
+
+  <include file="$(find turtlebot_teleop)/launch/keyboard_teleop.launch">
+  </include>
+
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find l5_robots)/rviz/single_robot.rviz">
+  </node>
+
   <node pkg="l5_robots" name="Laser2CA" type="Laser2CA.py" output="screen">
   </node>
 

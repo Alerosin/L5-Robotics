@@ -10,6 +10,7 @@ import math
 import cv2
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
+from cv_bridge import CvBridge, CvBridgeError
 import sys
 
 # Colour mappings in BGR
@@ -34,11 +35,17 @@ class CAVisualiser():
         self.g_map = np.array([COLOURS[mapping][1] for mapping in COLOURS])
         self.r_map = np.array([COLOURS[mapping][2] for mapping in COLOURS])
 
-        # Included in Header of Image msg
-        self.image_id = 0
+        # Used to create ROS Image to publish
+        self.bridge = CvBridge()
                
         try:
             rospy.Subscriber("ca/state", CaGrid, self.stateCallback)
+        except Exception as e:
+            print(e)
+            sys.exit(0)
+
+        try:
+            self.img_pub = rospy.Publisher("ca/internal_img_rgb", Image, queue_size=10)
         except Exception as e:
             print(e)
             sys.exit(0)
@@ -48,6 +55,7 @@ class CAVisualiser():
         rospy.loginfo("CAVisualiser node shutting down.")
         cv2.destroyAllWindows()
 
+    # Draws lines to tell where laserscanner reaches
     def drawScanLines(self):
         line_colour = (255, 0, 0)
         line_px_width = 1 
@@ -75,8 +83,6 @@ class CAVisualiser():
 
         # Colour Representation
         bgr_img = np.zeros([self.grid.shape[0], self.grid.shape[1], 3], np.uint8)
-        if 2 in self.grid:
-            print("FOUND OBSTACLE! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Construct BGR colour channels
         # Must be divided by 255 because of scaling, and
@@ -85,7 +91,7 @@ class CAVisualiser():
         bgr_img[:,:,1] = np.asarray(self.g_map[self.grid], dtype=np.uint8)
         bgr_img[:,:,2] = np.asarray(self.r_map[self.grid], dtype=np.uint8)
         
-        
+        # Old slow code - educational
         #for row in range(self.grid.shape[0]):
             #for cell in range(self.grid.shape[1]):
                 #cell_val = self.grid[row, cell]
@@ -101,11 +107,8 @@ class CAVisualiser():
         cv2.imshow(self.window, res)
         cv2.waitKey(10)
 
-        # Publish to RVIZ
-
-    def makeImageMsg(self):
-
-
+        # Publish Image
+        self.img_pub.publish(self.bridge.cv2_to_imgmsg(res))
 
 
 if __name__ == '__main__':

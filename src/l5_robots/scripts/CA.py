@@ -126,8 +126,6 @@ class CA():
                 #    newLattice[i][j] = DEAD
 
         self.lat = newLattice
-        if 2 in newLattice:
-            print("Found one")
 
 
     def setStates(self):
