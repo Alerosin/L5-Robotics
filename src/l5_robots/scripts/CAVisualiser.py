@@ -28,7 +28,9 @@ class CAVisualiser():
 
         # Variables controlling custom visualiser window (OpenCV)
         self.window = "CA Visualiser"
-        self.image_scale = 15
+        self.image_res = 600
+        self.info_panel_height = 150
+        self.border_thickness = 3
 
         # Construct nunpy arrays used to convert 2D grayscale to 3D BGR
         self.b_map = np.array([COLOURS[mapping][0] for mapping in COLOURS])
@@ -72,6 +74,19 @@ class CAVisualiser():
         cv2.line(self.res, P1, P3, line_colour, line_px_width)
         #cv2.line(self.res, (0, 0), (height, width), line_colour, 1)
 
+    # Returns an OpenCV image with an info panel below
+    def addInfoPanel(self):
+        s = self.res.shape
+        # Create new array with extra space
+        img = np.ones([s[0] + self.info_panel_height, s[1], s[2]], dtype=np.uint8)
+
+        # Copy over the image data
+        img[:s[0],:,:] = self.res
+
+        #Give the panel a colour
+        img[s[0]:,:] = (0, 0, 255) 
+        img[s[0]+self.border_thickness:,:] = (255, 255, 245)
+        return img
 
 
     def stateCallback(self, data):
@@ -82,7 +97,7 @@ class CAVisualiser():
         self.grid = np.asarray(self.grid, dtype=np.uint8)
 
         # Colour Representation
-        bgr_img = np.zeros([self.grid.shape[0], self.grid.shape[1], 3], np.uint8)
+        bgr_img = np.zeros([self.grid.shape[0], self.grid.shape[1], 3], dtype=np.uint8)
 
         # Construct BGR colour channels
         # Must be divided by 255 because of scaling, and
@@ -100,15 +115,17 @@ class CAVisualiser():
                 #bgr_img[row, cell, 1] = g
                 #bgr_img[row, cell, 2] = r
 
-        res = cv2.resize(bgr_img, None, fx=self.image_scale, fy=self.image_scale, 
+        scaling_factor = self.image_res / bgr_img.shape[0]
+
+        self.res = cv2.resize(bgr_img, None, fx=scaling_factor, fy=scaling_factor, 
                             interpolation = cv2.INTER_AREA)
 
         # Publish to custom visualiser window
-        cv2.imshow(self.window, res)
+        cv2.imshow(self.window, self.addInfoPanel())
         cv2.waitKey(10)
 
         # Publish Image
-        self.img_pub.publish(self.bridge.cv2_to_imgmsg(res))
+        self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.res))
 
 
 if __name__ == '__main__':
