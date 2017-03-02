@@ -15,17 +15,20 @@ import sys
 
 import rospy
 from l5_robots.msg import CaGrid, CaRow, Obstacles
+from std_msgs.msg import Int32
 
-HEIGHT = 40
-WIDTH = 40
-LIVE = 1
-DEAD = 0
-OBSTACLE = 2
+HEIGHT = rospy.get_param('/CA/HEIGHT')
+WIDTH = rospy.get_param('/CA/WIDTH')
+LIVE = rospy.get_param('/CA/LIVE')
+DEAD = rospy.get_param('/CA/DEAD')
+OBSTACLE = rospy.get_param('/CA/OBSTACLE')
 
 OCTAGON_PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5), 
-            (2, 1), (2, 6), (3, 0), (3, 7), 
-            (4, 0), (4, 7), (5, 1), (5, 6), 
-            (6, 2), (6, 5), (7, 3), (7, 4) ]
+                    (2, 1), (2, 6), (3, 0), (3, 7), 
+                    (4, 0), (4, 7), (5, 1), (5, 6), 
+                    (6, 2), (6, 5), (7, 3), (7, 4) ]
+# Convert from list of lists to list of tuples (Only needed when getting pattern from parameter server)
+# OCTAGON_PATTERN = [(x[0], x[1]) for x in OCTAGON_PATTERN]
 
 
 # Takes LaserScan data and uses it to maintain a CA representing
@@ -36,7 +39,6 @@ class CA():
         self.octagonSet = False
         self.lat = np.zeros((HEIGHT, WIDTH), int)
 
-
         rospy.init_node('CA', anonymous=False)
         rospy.loginfo("CA node started.")
         rospy.on_shutdown(self.shutdown)
@@ -46,10 +48,16 @@ class CA():
             sys.exit(0)
         elif (HEIGHT < 10) or (WIDTH < 10):
             rospy.loginfo("ERROR: Height & width too small. Minimum 10.")
-            sys.exit(0)
+            sys.exit(0)        
 
         try:
             rospy.Subscriber("ca/obstacles", Obstacles, self.obstaclesCallback)
+        except Exception as e:
+            print(e)
+            sys.exit(0)
+
+        try:
+            rospy.Subscriber("ca/refresh_oscillator", Int32, self.refreshCallback)
         except Exception as e:
             print(e)
             sys.exit(0)
@@ -159,6 +167,9 @@ class CA():
                 else:
                     self.lat[rel_y + y][rel_x + x] = DEAD
 
+    def refreshCallback(self, data):
+        self.setOctagon()
+
     # Sets the spinner oscillator in the centre of the CA
     def setSpinner(self):
         x = WIDTH/2
@@ -222,13 +233,9 @@ class CA():
 
     def shutdown(self):
         rospy.loginfo("CA node shutting down..")
-        rospy.sleep(1)
 
 
 
 
 if __name__ == "__main__":
-    try:
-        CA()
-    except Exception as e:
-        raise e
+    CA()

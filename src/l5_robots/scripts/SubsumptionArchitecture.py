@@ -7,6 +7,7 @@ import rospy
 from geometry_msgs.msg import Twist
 from l5_robots.msg import CaGrid
 from l5_robots.msg import CaRow
+from std_msgs.msg import Int32
 
 class SubsumptionArchitecture():
     # Init ROS node, register for subs/pubs, start loop
@@ -26,40 +27,53 @@ class SubsumptionArchitecture():
                         self.bumperActivated, self.objectTooClose]
 
         try:
-            self.ca = rospy.Subscriber("ca/trigger_layer", Int32, callback)
+            self.ca = rospy.Subscriber("ca/trigger_layer", Int32, self.callback)
         except Exception as e:
-            print("Alright then")
-            self.ca = []
+            rospy.loginfo("Error in Subsumption when subscribing to /trigger_layer..")
+            print(e)
 
         while not rospy.is_shutdown():
             try:
-                self.decideLayer()
+                rospy.spin()
             except Exception as e:
                 rospy.loginfo("Error when calling decideLayer..")
                 print(e)
-            r.sleep()
 
     # TODO: CAInterpreter has taken a decision, set the appropriate flag
-    def callback(data):
-        # Reset Flags
-        for i in self.flags:
-            e = False
+    def callback(self, data):
+        move_cmd = Twist()
 
-        if data == 1:
-            right_flag = True
-        elif data = 2:
-            left_flag = True
+        if data.data == 1:
+            rospy.loginfo("Issuing Right move command")
+            move_cmd.linear.x = 0.0
+            move_cmd.angular.z = -0.4
+            self.cmd_vel.publish(move_cmd)
+        elif data.data == 2:
+            rospy.loginfo("Issuing Left move command")
+            move_cmd.linear.x = 0.0
+            move_cmd.angular.z = 0.4
+            self.cmd_vel.publish(move_cmd)
+        elif data.data == 3:
+            rospy.loginfo("Issuing Back move command")
+            move_cmd.linear.x = -0.2
+            move_cmd.angular.z = 0.0
+            self.cmd_vel.publish(move_cmd)
         else:
-            straight_flag = True
+            rospy.loginfo("Issuing Straight move command")
+            move_cmd.linear.x = 0.2
+            move_cmd.angular.z = 0
+            self.cmd_vel.publish(move_cmd)
+
+
 
 
     # Subsumption layer logic - Use the flags to decide what to do
     def decideLayer(self):
         move_cmd = Twist()
 
-        if (bumperActivated):
+        if (self.bumperActivated):
             print("")
-        elif (objectTooClose):
+        elif (self.objectTooClose):
             print("")
         elif (self.right_flag):
             rospy.loginfo("Issuing Right move command")
@@ -77,7 +91,11 @@ class SubsumptionArchitecture():
             move_cmd.angular.z = 0
             self.cmd_vel.publish(move_cmd)
         else:
-            rospy.loginfo("No move command")
+            pass
+            #rospy.loginfo("No move command")
+
+        for i in self.flags:
+            i = False
 
 
     def shutdown(self):

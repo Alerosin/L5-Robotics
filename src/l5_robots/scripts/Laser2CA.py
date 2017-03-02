@@ -8,8 +8,9 @@ import rospy
 from sensor_msgs.msg import LaserScan
 from l5_robots.msg import Obstacles
 
-CALLBACK_TIME_FILTER = rospy.Duration(0.03) # Time between read /scan messages, in nanoseconds
-LASER_RANGE_MAX = 5.0 # Max desired range for laser scanner, should be shorter than physical range limit of scanner
+CALLBACK_TIME_FILTER = rospy.Duration(1.0 / rospy.get_param('/publish_frequency_hz')) # Time between read /scan messages, in nanoseconds
+LASER_RANGE_MAX = rospy.get_param('/Laser2CA/LASER_RANGE_MAX') # Max desired range for laser scanner, should be shorter than physical range limit of scanner
+
 
 class Laser2CA():
     # Get scan message and parse it - but only if the message 
@@ -65,7 +66,6 @@ class Laser2CA():
 
     def shutdown(self):
         rospy.loginfo("Stopping Laser2CA node..")
-        rospy.sleep(1)
  
 if __name__ == '__main__':
     try:

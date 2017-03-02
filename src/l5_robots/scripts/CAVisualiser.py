@@ -4,7 +4,6 @@
 
 import rospy
 from l5_robots.msg import CaGrid, CaRow
-import matplotlib.pyplot as plt
 import numpy as np
 import math
 import cv2
@@ -14,11 +13,17 @@ from cv_bridge import CvBridge, CvBridgeError
 import sys
 
 # Colour mappings in BGR
-COLOURS = {
-    0: (0, 0, 0), # Background is dark grey
-    1: (255, 255, 255),       # CA is white
-    2: (0, 150, 255)    # Obstacles are orange
-}
+COLOURS = rospy.get_param('colour_mappings')
+COLOURS = {int(k):eval(v) for k,v in COLOURS.items()}
+
+# ROI's in format: [(starting x coord, x length), (starting y coord, y length)]
+ROIl = rospy.get_param('ROIl')
+ROIr = rospy.get_param('ROIr')
+
+# Convert from list of lists to list of tuples
+ROIl = [(int(x[0]), int(x[1])) for x in ROIl]
+ROIr = [(int(x[0]), int(x[1])) for x in ROIr]
+
 
 class CAVisualiser():
     def __init__(self):
@@ -74,6 +79,18 @@ class CAVisualiser():
         cv2.line(self.res, P1, P3, line_colour, line_px_width)
         #cv2.line(self.res, (0, 0), (height, width), line_colour, 1)
 
+    def drawROIs(self, scaling_factor):
+        for r in (ROIl, ROIr):
+            x = r[0][0] * scaling_factor
+            x2 = (r[0][0] + r[0][1]) * scaling_factor
+
+            y = r[1][0] * scaling_factor
+            y2 = (r[1][0] + r[1][1]) * scaling_factor
+
+            cv2.rectangle(self.res, (x, y), (x2, y2), (255, 0, 0), 1)
+
+
+
     # Returns an OpenCV image with an info panel below
     def addInfoPanel(self):
         s = self.res.shape
@@ -119,13 +136,19 @@ class CAVisualiser():
 
         self.res = cv2.resize(bgr_img, None, fx=scaling_factor, fy=scaling_factor, 
                             interpolation = cv2.INTER_AREA)
-
-        # Publish to custom visualiser window
-        cv2.imshow(self.window, self.addInfoPanel())
-        cv2.waitKey(10)
+        
+        self.drawROIs(scaling_factor)
 
         # Publish Image
         self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.res))
+
+        
+        # Publish to custom visualiser window
+        self.img = self.addInfoPanel()
+        cv2.imshow(self.window, self.res)
+        cv2.waitKey(10)
+
+        
 
 
 if __name__ == '__main__':
