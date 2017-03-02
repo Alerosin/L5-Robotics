@@ -13,7 +13,7 @@ To install:
 You'll need an installation of Ubuntu and ROS, with catkin.
 
  - 1. Clone, or download and unzip into a catkin workspace.
- - 2. In a terminal, got to the catkin workspace and enter:
-	catkin_make
- - 3. Now launch one of the launch files in l5_robots/launch/
-	roslaunch l5_robots name_of_launch_file.launch
+ - 2. In a terminal, got to the catkin workspace and enter:  
+           catkin_make
+ - 3. Now launch one of the launch files in l5_robots/launch/  
+           roslaunch l5_robots name_of_launch_file.launch
