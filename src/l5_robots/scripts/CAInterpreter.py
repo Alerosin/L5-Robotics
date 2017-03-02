@@ -3,7 +3,7 @@
 # Analyse a CA to determine actions, send those actions to the subsumption architecture
 
 import rospy
-from l5_robots.msg import CaGrid, CaRow
+from l5_robots.msg import CaGrid, CaRow, InterpreterData
 from std_msgs.msg import Int32
 import sys
 import numpy as np
@@ -13,8 +13,6 @@ ROIl = rospy.get_param('ROIl')
 ROIr = rospy.get_param('ROIr')
 
 # Convert from list of lists to list of tuples
-print(ROIl)
-print(list(ROIl[0])[0])
 ROIl = [(int(x[0]), int(x[1])) for x in ROIl]
 ROIr = [(int(x[0]), int(x[1])) for x in ROIr]
 
@@ -33,6 +31,11 @@ class CAInterpreter():
         rospy.on_shutdown(self.shutdown)
 
         self.refresh_counter = 0
+
+        # Create the msg that is used for the info panel in visualiser, add constants.
+        self.info_msg = InterpreterData()
+        self.info_msg.thresh_limit = THRESH_LIMIT
+        self.info_msg.refresh_limit = REFRESH_LIMIT
                
         try:
             rospy.Subscriber("ca/state", CaGrid, self.stateCallback)
@@ -42,14 +45,18 @@ class CAInterpreter():
 
         try:
             self.action_pub = rospy.Publisher("ca/trigger_layer", Int32, queue_size=10)
-            r = rospy.Rate(10);
         except Exception as e:
             print(e)
             sys.exit(0)
 
         try:
             self.refresh_pub = rospy.Publisher("ca/refresh_oscillator", Int32, queue_size=10)
-            r = rospy.Rate(10);
+        except Exception as e:
+            print(e)
+            sys.exit(0)
+
+        try:
+            self.info_pub = rospy.Publisher("ca/interpreter_data", InterpreterData, queue_size=10)
         except Exception as e:
             print(e)
             sys.exit(0)
@@ -63,38 +70,54 @@ class CAInterpreter():
             self.grid.append([x for x in row.row])
         self.grid = np.asarray(self.grid, dtype=np.uint8)
 
+        action = -1
+
         tL, rL = self.threshold(ROIl)
         tR, rR = self.threshold(ROIr)
 
-
         if (tR and tL):
             if rR > rL:
-                self.action_pub.publish(RIGHT)
+                action = RIGHT
             elif rR < rL:
-                self.action_pub.publish(LEFT)
+                action = LEFT
             else:
-                self.action_pub.publish(BACK)
+                action = BACK
             self.refresh_counter += 2
 
         elif (tR):
-            self.action_pub.publish(RIGHT)
+            action = RIGHT
             self.refresh_counter += 2
 
         elif (tL):
-            self.action_pub.publish(LEFT)
+            action = LEFT
             self.refresh_counter += 2
-
-        elif self.refresh_counter > REFRESH_LIMIT:
-            self.refresh_pub.publish(BACK)
-            self.refresh_pub.publish(BACK)
-            self.refresh_pub.publish(BACK)
-            self.refresh_counter = 0
 
         else:
             self.refresh_counter += 10
-            self.action_pub.publish(STRAIGHT)
+            action = STRAIGHT
 
-        
+
+        if self.refresh_counter > REFRESH_LIMIT:
+            self.refresh_counter = 0
+            self.refresh_pub.publish(0)
+
+        self.action_pub.publish(action)
+
+        self.info_msg.ROIl_ratio = rL
+        self.info_msg.ROIl_thresh = str(tL)
+        self.info_msg.ROIr_ratio = rR
+        self.info_msg.ROIr_thresh = str(tR)
+        self.info_msg.refresh_counter = self.refresh_counter
+        # TODO: Find another way of getting the string
+        if action == 0:
+            self.info_msg.action = "Straight"
+        elif action == 1:
+            self.info_msg.action = "Right"
+        elif action == 2:
+            self.info_msg.action = "Left"
+        elif action == 3:
+            self.info_msg.action = "Back"
+        self.info_pub.publish(self.info_msg)
 
 
     def threshold(self, ROI):
@@ -104,7 +127,6 @@ class CAInterpreter():
         # Frequency of values in the ROI
         unique, counts = np.unique(np_ROI, return_counts=True)
         occurences = dict(zip(unique, counts))
-        print(occurences)
 
         # How much of the ROI is LIVE
         area = np_ROI.shape[0] * np_ROI.shape[1]
@@ -112,8 +134,6 @@ class CAInterpreter():
             ratio = float(occurences[1]) / float(area)
         else:
             ratio = 0
-
-        print(str(ratio) + " --- " + str(THRESH_LIMIT))
 
         if ratio > THRESH_LIMIT:
             return True, ratio

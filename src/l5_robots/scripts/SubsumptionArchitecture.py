@@ -45,12 +45,12 @@ class SubsumptionArchitecture():
 
         if data.data == 1:
             rospy.loginfo("Issuing Right move command")
-            move_cmd.linear.x = 0.0
+            move_cmd.linear.x = 0.05
             move_cmd.angular.z = -0.4
             self.cmd_vel.publish(move_cmd)
         elif data.data == 2:
             rospy.loginfo("Issuing Left move command")
-            move_cmd.linear.x = 0.0
+            move_cmd.linear.x = 0.05
             move_cmd.angular.z = 0.4
             self.cmd_vel.publish(move_cmd)
         elif data.data == 3:

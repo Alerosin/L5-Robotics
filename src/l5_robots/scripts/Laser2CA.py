@@ -53,15 +53,11 @@ class Laser2CA():
 
         try:
             self.obstacles_pub = rospy.Publisher('ca/obstacles', Obstacles, queue_size=10)
-            r = rospy.Rate(10);
         except Exception as e:
             print(e)
             sys.exit(0)
 
         self.stamp = rospy.Time.now()
-
-        while not rospy.is_shutdown():
-            r.sleep()
 
 
     def shutdown(self):
@@ -70,5 +66,6 @@ class Laser2CA():
 if __name__ == '__main__':
     try:
         Laser2CA()
+        rospy.spin()
     except:
         rospy.loginfo("Laser2CA node terminated.")

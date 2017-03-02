@@ -1,0 +1,8 @@
+float32 ROIl_ratio
+string ROIl_thresh
+float32 ROIr_ratio
+string ROIr_thresh
+float32 thresh_limit
+string action
+int32 refresh_counter
+int32 refresh_limit

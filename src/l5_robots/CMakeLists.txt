@@ -49,6 +49,7 @@ add_message_files(
   CaRow.msg
   CaGrid.msg
   Obstacles.msg
+  InterpreterData.msg
 )
 
 ## Generate services in the 'srv' folder
