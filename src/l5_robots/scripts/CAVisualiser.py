@@ -123,9 +123,9 @@ class CAVisualiser():
         bot_y = img.shape[0] - t_pad
         left_x = t_pad
 
-        lR = "Left Ratio: " + str(self.info_dict['ROIl_ratio']) + "/" + str(self.info_dict['thresh_limit'])
+        lR = "Left Ratio: " + str(round(self.info_dict['ROIl_ratio'], 2)) + "/" + str(self.info_dict['thresh_limit'])
         #lT = " Left Threshold: " + str(self.info_dict['ROIl_thresh'])
-        rR = "Right Ratio: " + str(self.info_dict['ROIr_ratio']) + "/" + str(self.info_dict['thresh_limit'])
+        rR = "Right Ratio: " + str(round(self.info_dict['ROIr_ratio'], 2)) + "/" + str(self.info_dict['thresh_limit'])
         #rT = "Right Threshold: " + str(self.info_dict['ROIr_thresh'])
         
         if self.info_dict['ROIl_ratio'] > self.info_dict['thresh_limit']:
@@ -138,7 +138,6 @@ class CAVisualiser():
         else:
             col_r = (0, 0, 0)
 
-        print("PUT TEXT")
         cv2.putText(img, lR, (left_x, bot_y - t_space*3), font, font_size, col_l)
         cv2.putText(img, rR, (left_x, bot_y - t_space*2), font, font_size, col_r)
 

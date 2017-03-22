@@ -43,7 +43,7 @@
 
 
 
-  <param name="publish_frequency_hz" value="40" />
+  <param name="publish_frequency_hz" value="20" />
 
   <rosparam param="ROIl">[[20, 10], [10, 10]]</rosparam>
   <rosparam param="ROIr">[[20, 10], [30, 10]]</rosparam>
@@ -77,6 +77,7 @@
   <node pkg="l5_robots" name="CAInterpreter" type="CAInterpreter.py" output="screen">
     <param name="THRESH_LIMIT" value="0.0"/>
     <param name="REFRESH_LIMIT" value="300"/>
+    <param name="RECOV_LIMIT" value="50"/>
   </node>
 
   <node pkg="l5_robots" name="SubsumptionArchitecture" type="SubsumptionArchitecture.py" output="screen"/>

@@ -18,11 +18,13 @@ ROIr = [(int(x[0]), int(x[1])) for x in ROIr]
 
 THRESH_LIMIT = rospy.get_param('/CAInterpreter/THRESH_LIMIT') # Threshold in percent
 REFRESH_LIMIT = rospy.get_param('/CAInterpreter/REFRESH_LIMIT') # Time after which to refresh the oscillator
+RECOV_LIMIT = rospy.get_param('/CAInterpreter/RECOV_LIMIT') # Time after which to refresh the oscillator
 
 STRAIGHT = 0
 RIGHT = 1
 LEFT = 2
 BACK = 3
+RECOVER = 4
 
 class CAInterpreter():
     def __init__(self):
@@ -31,6 +33,8 @@ class CAInterpreter():
         rospy.on_shutdown(self.shutdown)
 
         self.refresh_counter = 0
+        self.recover_counter = 0
+        self.prev_action = 0
 
         # Create the msg that is used for the info panel in visualiser, add constants.
         self.info_msg = InterpreterData()
@@ -96,12 +100,17 @@ class CAInterpreter():
             self.refresh_counter += 10
             action = STRAIGHT
 
+        if action == self.prev_action:
+            self.recover_counter += 1
+            if self.recover_counter > RECOV_LIMIT:
+                action = RECOVER
+        else:
+            self.recover_counter = 0
+
 
         if self.refresh_counter > REFRESH_LIMIT:
             self.refresh_counter = 0
             self.refresh_pub.publish(0)
-
-        self.action_pub.publish(action)
 
         self.info_msg.ROIl_ratio = rL
         self.info_msg.ROIl_thresh = str(tL)
@@ -109,15 +118,21 @@ class CAInterpreter():
         self.info_msg.ROIr_thresh = str(tR)
         self.info_msg.refresh_counter = self.refresh_counter
         # TODO: Find another way of getting the string
-        if action == 0:
+        if action == STRAIGHT:
             self.info_msg.action = "Straight"
-        elif action == 1:
+        elif action == RIGHT:
             self.info_msg.action = "Right"
-        elif action == 2:
+        elif action == LEFT:
             self.info_msg.action = "Left"
-        elif action == 3:
+        elif action == BACK:
             self.info_msg.action = "Back"
+        elif action == RECOVER:
+            self.info_msg.action = "Recover"
+
+        self.prev_action = action
+        
         self.info_pub.publish(self.info_msg)
+        self.action_pub.publish(action)
 
 
     def threshold(self, ROI):
