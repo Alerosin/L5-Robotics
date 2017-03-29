@@ -100,7 +100,7 @@ class CAInterpreter():
             self.refresh_counter += 10
             action = STRAIGHT
 
-        if action == self.prev_action:
+        if action == self.prev_action and False:
             self.recover_counter += 1
             if self.recover_counter > RECOV_LIMIT:
                 action = RECOVER

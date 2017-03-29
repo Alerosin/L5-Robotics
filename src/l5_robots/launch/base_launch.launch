@@ -82,5 +82,6 @@
 
   <node pkg="l5_robots" name="SubsumptionArchitecture" type="SubsumptionArchitecture.py" output="screen"/>
 
+  <node pkg="l5_robots" name="FakeBumper" type="FakeBumper.py" output="screen" />
   
 </launch>

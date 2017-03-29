@@ -55,6 +55,10 @@
   <run_depend>urdf</run_depend>
   <run_depend>xacro</run_depend>
   <run_depend>turtlebot</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>kobuki_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
