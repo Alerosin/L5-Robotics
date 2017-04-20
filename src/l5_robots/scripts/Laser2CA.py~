@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Read input from laser scanner on /scan
 # Convert into input for the CA

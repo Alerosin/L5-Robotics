@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Analyse a CA to determine actions, send those actions to the subsumption architecture
 
