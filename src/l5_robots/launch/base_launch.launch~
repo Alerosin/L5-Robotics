@@ -1,16 +1,11 @@
 <launch>
-  <arg name="world_file"  default="$(find l5_robots)/maps/final_labyrinth.world"/>
+  <arg name="world_file"  default="$(find l5_robots)/maps/labyrinth.world"/>
 
   <arg name="base"      value="$(optenv TURTLEBOT_BASE kobuki)"/> <!-- create, roomba -->
   <arg name="battery"   value="$(optenv TURTLEBOT_BATTERY /proc/acpi/battery/BAT0)"/>  <!-- /proc/acpi/battery/BAT0 --> 
   <arg name="gui" default="true"/>
   <arg name="stacks"    value="$(optenv TURTLEBOT_STACKS hexagons)"/>  <!-- circles, hexagons --> 
   <arg name="3d_sensor" value="$(optenv TURTLEBOT_3D_SENSOR kinect)"/>  <!-- kinect, asus_xtion_pro --> 
-  <arg name="record_goal" default="true" />
-  <arg name="record_status" default="false" />
-  <arg name="record_CA_state" default="false" />
-  <arg name="run_name" default="default_run" />
-  <arg name="ca_type" default="conway" /> <!-- conway, brian --> 
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="use_sim_time" value="true"/>
@@ -23,8 +18,8 @@
     <arg name="base" value="$(arg base)"/>
     <arg name="stacks" value="$(arg stacks)"/>
     <arg name="3d_sensor" value="$(arg 3d_sensor)"/>
-    <arg name="x" value="1.575197" />
-    <arg name="y" value="8.0" />
+    <arg name="x" value="-0.433787" />
+    <arg name="y" value="8.403358" />
     <arg name="z" value="-0.000248" />
     <arg name="roll" value="-0.000248" />
     <arg name="pitch" value="-0.000248" />
@@ -55,16 +50,8 @@
   <rosparam param="colour_mappings">  
       '0': (0, 0, 0) 
       '1': (255, 255, 255) 
-      '2': (0, 0, 50)
-      '3': (0, 0, 255)
-      '4': (0, 150, 255)
+      '2': (0, 150, 255)
   </rosparam>
-
-  <arg name="dead" default="0" />
-  <arg name="live" default="1" />
-  <arg name="between" default="2" />
-  <arg name="obstacle" default="4" />
-  <arg name="use_ca_arch" default="true" />
 
 
 
@@ -73,17 +60,15 @@
   <!--node pkg="rviz" type="rviz" name="rviz" args="-d $(find l5_robots)/rviz/single_robot.rviz" /-->
 
   <node pkg="l5_robots" name="Laser2CA" type="Laser2CA.py" output="screen">
-    <param name="LASER_RANGE_MAX" value="7.0"/>
+    <param name="LASER_RANGE_MAX" value="5.0"/>
   </node>
 
   <node pkg="l5_robots" name="CA" type="CA.py" output="screen">
     <param name="HEIGHT" value="50"/>
     <param name="WIDTH" value="50"/>
-    <param name="LIVE" value="$(arg live)"/>
-    <param name="DEAD" value="$(arg dead)"/>
-    <param name="OBSTACLE" value="$(arg obstacle)"/>
-    <param name="BETWEEN" value="$(arg between)"/>
-    <param name="TYPE" value="$(arg ca_type)"/>
+    <param name="LIVE" value="1"/>
+    <param name="DEAD" value="0"/>
+    <param name="OBSTACLE" value="2"/>
   </node>
 
   <node pkg="l5_robots" name="CAVisualiser" type="CAVisualiser.py" output="screen">
@@ -95,28 +80,7 @@
     <param name="RECOV_LIMIT" value="50"/>
   </node>
 
-  <node pkg="l5_robots" name="SubsumptionArchitecture" type="SubsumptionArchitecture.py" output="screen"> 
-    <param name="TYPE" value="$(arg ca_type)"/>
-  </node>
-
-  <node pkg="l5_robots" name="GoalListener" type="GoalListener.py" output="screen" required="true"/>
-
-
-
-
-   <node pkg="rosbag" type="record" name="rosbag_record_CA_state"
-       args="-o $(find l5_robots)/bags/$(arg ca_type)/CA_state /ca/state"
-       if="$(arg record_CA_state)" />
-
-
-
- <node pkg="rosbag" type="record" name="rosbag_record_status"
-       args="-o $(find l5_robots)/bags/$(arg ca_type)/status /rosout /ca/interpreter_data"
-       if="$(arg record_status)" />
-
- <node pkg="rosbag" type="record" name="rosbag_record_goal"
-       args="-o $(find l5_robots)/bags/$(arg ca_type)/goal /ca/goal_reached"
-       if="$(arg record_goal)" />  
+  <node pkg="l5_robots" name="SubsumptionArchitecture" type="SubsumptionArchitecture.py" output="screen"/>
 
   
 </launch>

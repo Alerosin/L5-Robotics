@@ -19,8 +19,11 @@ from std_msgs.msg import Int32
 
 HEIGHT = rospy.get_param('/CA/HEIGHT')
 WIDTH = rospy.get_param('/CA/WIDTH')
-LIVE = rospy.get_param('/CA/LIVE')
+TYPE = rospy.get_param('/CA/TYPE')
+
 DEAD = rospy.get_param('/CA/DEAD')
+LIVE = rospy.get_param('/CA/LIVE')
+BETWEEN = rospy.get_param('/CA/BETWEEN')
 OBSTACLE = rospy.get_param('/CA/OBSTACLE')
 
 OCTAGON_PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5), 
@@ -36,8 +39,8 @@ OCTAGON_PATTERN = [ (0, 3), (0, 4), (1, 2), (1, 5),
 # where it can be used to take actions.
 class CA():
     def __init__(self):
-        self.octagonSet = False
         self.lat = np.zeros((HEIGHT, WIDTH), int)
+        self.setOscillator()
 
         rospy.init_node('CA', anonymous=False)
         rospy.loginfo("CA node started.")
@@ -92,17 +95,13 @@ class CA():
                 if x < 0 or x >= WIDTH:
                     continue
                 
-                if self.lat[y][x] == LIVE:
+                if self.lat[y][x] == LIVE: # BETWEEN for brian's brain
                     res = res + 1
 
         return res
 
     # TODO: More pythonic way of implementing?
     def update(self):
-        # If oscillator is not set, set it
-        if not self.octagonSet:
-            self.setOctagon()
-            self.octagonSet = True
 
         newLattice = np.zeros((HEIGHT, WIDTH), int)
 
@@ -115,23 +114,25 @@ class CA():
 
                 neighbour_sum = self.checkNeighbours(i, j)
 
-                # GAME OF LIFE RULES
-                if self.lat[i][j] == LIVE:
-                    if (neighbour_sum < 2) or (neighbour_sum > 3):
-                        newLattice[i][j] = DEAD
-                    else:
-                        newLattice[i][j] = LIVE # Because the newLattice is init'ed with 0's - this case is required
-                elif self.lat[i][j] == DEAD:
-                    if neighbour_sum == 3:
-                        newLattice[i][j] = LIVE
 
-                # BRIAN'S BRAIN RULES
-                #if (lat[i][j] == DEAD) and (neighbour_sum == 2):   # Cell is dead
-                #    newLattice[i][j] = LIVE
-                #elif (lat[i][j] == LIVE):  # Cell is live
-                #    newLattice[i][j] = BETWEEN
-                #if (self.lat[i][j] == BETWEEN): # Betweens again eligible for life
-                #    newLattice[i][j] = DEAD
+                if TYPE == "conway":
+                    # GAME OF LIFE RULES
+                    if self.lat[i][j] == LIVE:
+                        if (neighbour_sum < 2) or (neighbour_sum > 3):
+                            newLattice[i][j] = DEAD
+                        else:
+                            newLattice[i][j] = LIVE # Because the newLattice is init'ed with 0's - this case is required
+                    elif self.lat[i][j] == DEAD:
+                        if neighbour_sum == 3:
+                            newLattice[i][j] = LIVE
+                elif TYPE == "brian":
+                    # BRIAN'S BRAIN RULES
+                    if (self.lat[i][j] == DEAD) and (neighbour_sum == 2):   # Cell is dead
+                        newLattice[i][j] = LIVE
+                    elif (self.lat[i][j] == LIVE):  # Cell is live
+                        newLattice[i][j] = BETWEEN
+                    if (self.lat[i][j] == BETWEEN): # Betweens again eligible for life
+                        newLattice[i][j] = DEAD
 
         self.lat = newLattice
 
@@ -167,8 +168,30 @@ class CA():
                 else:
                     self.lat[rel_y + y][rel_x + x] = DEAD
 
+    def setBriansOscillator(self):
+        rel_x = (WIDTH/2)
+        rel_y = (HEIGHT/2)
+
+        self.lat[rel_y][rel_x] = BETWEEN
+        self.lat[rel_y + 1][rel_x] = BETWEEN
+        self.lat[rel_y][rel_x + 1] = BETWEEN
+        self.lat[rel_y + 1][rel_x + 1] = BETWEEN
+        self.lat[rel_y][rel_x - 1] = LIVE
+        self.lat[rel_y + 2][rel_x] = LIVE
+        self.lat[rel_y + 1][rel_x + 2] = LIVE
+        self.lat[rel_y - 1][rel_x + 1] = LIVE
+
+
+
+
+    def setOscillator(self):
+        if TYPE == "conway":
+            self.setOctagon()
+        elif TYPE == "brian":
+            self.setBriansOscillator()
+
     def refreshCallback(self, data):
-        self.setOctagon()
+        self.setOscillator()
 
     # Sets the spinner oscillator in the centre of the CA
     def setSpinner(self):

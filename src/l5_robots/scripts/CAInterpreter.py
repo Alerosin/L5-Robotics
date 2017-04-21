@@ -38,7 +38,7 @@ class CAInterpreter():
 
         # Create the msg that is used for the info panel in visualiser, add constants.
         self.info_msg = InterpreterData()
-        self.info_msg.thresh_limit = THRESH_LIMIT
+        self.info_msg.thresh_limit = round(THRESH_LIMIT, 2)
         self.info_msg.refresh_limit = REFRESH_LIMIT
                
         try:
@@ -140,13 +140,13 @@ class CAInterpreter():
         np_ROI = self.grid[ROI[1][0]:ROI[1][0]+ROI[1][1], ROI[0][0]:ROI[0][0]+ROI[0][1]]
 
         # Frequency of values in the ROI
-        unique, counts = np.unique(np_ROI, return_counts=True)
-        occurences = dict(zip(unique, counts))
+        unique = np.unique(np_ROI)
+        #occurences = dict(zip(unique, counts))
 
         # How much of the ROI is LIVE
         area = np_ROI.shape[0] * np_ROI.shape[1]
-        if 1 in occurences:
-            ratio = float(occurences[1]) / float(area)
+        if 1 in unique:
+            ratio = float((np_ROI == 1).sum()) / float(area)
         else:
             ratio = 0
 

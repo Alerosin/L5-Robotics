@@ -46,6 +46,7 @@ class CAVisualiser():
                     "refresh_limit": 0,
                     "action": 0
         }
+        self.skip_frame = False
 
         # Construct nunpy arrays used to convert 2D grayscale to 3D BGR
         self.b_map = np.array([COLOURS[mapping][0] for mapping in COLOURS])
@@ -92,11 +93,11 @@ class CAVisualiser():
 
     def drawROIs(self, scaling_factor):
         for r in (ROIl, ROIr):
-            x = r[0][0] * scaling_factor
-            x2 = (r[0][0] + r[0][1]) * scaling_factor
+            x = (int)(r[0][0] * scaling_factor)
+            x2 = (int)((r[0][0] + r[0][1]) * scaling_factor)
 
-            y = r[1][0] * scaling_factor
-            y2 = (r[1][0] + r[1][1]) * scaling_factor
+            y = (int)(r[1][0] * scaling_factor)
+            y2 = (int)((r[1][0] + r[1][1]) * scaling_factor)
 
             cv2.rectangle(self.res, (x, y), (x2, y2), (255, 0, 0), 1)
 
@@ -148,6 +149,12 @@ class CAVisualiser():
 
 
     def stateCallback(self, data):
+        if (self.skip_frame == True):
+            self.skip_frame = False
+            return
+
+        self.skip_frame = True
+
         self.grid = []
         for row in data.grid:
             self.grid.append([x for x in row.row])
@@ -194,7 +201,7 @@ class CAVisualiser():
         self.info_dict['ROIl_thresh'] = data.ROIl_thresh
         self.info_dict['ROIr_ratio'] = data.ROIr_ratio
         self.info_dict['ROIr_thresh'] = data.ROIr_thresh
-        self.info_dict['thresh_limit'] = data.thresh_limit
+        self.info_dict['thresh_limit'] = round(data.thresh_limit, 2)
         self.info_dict['refresh_counter'] = data.refresh_counter
         self.info_dict['refresh_limit'] = data.refresh_limit
         self.info_dict['action'] = data.action
